@@ -1,4 +1,5 @@
-from flask import Flask, request, Response
+from fastapi import FastAPI, Request, Response
+from fastapi.responses import PlainTextResponse
 from zeep import Client
 from zeep.plugins import HistoryPlugin
 from lxml import etree
@@ -73,7 +74,7 @@ class ZeepMockClient:
         return self._create_soap_response('FundAvailabilityCheck', json_response)
     
     def transfer_authentication(self, accountNumber, transactionPassword, mobileNumber, authToken, sessionId):
-        json_response = self.mock_client.transfer_authentication(accountNumber,  transactionPassword,mobileNumber, authToken, sessionId)
+        json_response = self.mock_client.transfer_authentication(accountNumber, transactionPassword, mobileNumber, authToken, sessionId)
         return self._create_soap_response('TransferAuthentication', json_response)
     
     def initiate_transfer(self, sourceAccountNumber, beneficiaryAccountNumber, amount, mobileNumber, transferPurpose, remarks,
@@ -82,7 +83,6 @@ class ZeepMockClient:
                                                          transferPurpose, remarks, transactionId, authorizationCode, 
                                                          authToken, sessionId)
         return self._create_soap_response('InitiateTransfer', json_response)
-# --------------- After 7   --------------------------------------------------------
 
     def get_user_bills(self, mobileNumber, authToken, sessionId):
         json_response = self.mock_client.get_user_bills(mobileNumber, authToken, sessionId)
@@ -120,11 +120,9 @@ class ZeepMockClient:
                                                                      branchCode, reasonForRequest, additionalRemarks,
                                                                      mobileNumber, authToken, sessionId)
         return self._create_soap_response('ProcessChequeBookRequest', json_response)
-    
 
-
-# Create Flask app and zeep mock client
-app = Flask(__name__)
+# Create FastAPI app and zeep mock client
+app = FastAPI(title="SOAP Mock API", description="FastAPI implementation of SOAP mock services")
 zeep_mock = ZeepMockClient()
 
 # Helper function to extract parameters from SOAP request
@@ -166,10 +164,11 @@ def extract_soap_params(xml_string, operation_name):
         return {}
 
 # SOAP service endpoint
-@app.route('/soap/<service_name>', methods=['POST'])
-def soap_service(service_name):
+@app.post('/soap/{service_name}')
+async def soap_service(service_name: str, request: Request):
     # Get the raw SOAP request
-    soap_request = request.data.decode('utf-8')
+    soap_request = await request.body()
+    soap_request_str = soap_request.decode('utf-8')
     
     try:
         # Map service names to methods
@@ -181,38 +180,40 @@ def soap_service(service_name):
             'FundAvailabilityCheck': zeep_mock.fund_availability_check,
             'TransferAuthentication': zeep_mock.transfer_authentication,
             'InitiateTransfer': zeep_mock.initiate_transfer,
-            'GetUserBills':zeep_mock.get_user_bills,
-            'BillValidation':zeep_mock.bill_validation,
-            'ProcessBillPayment':zeep_mock.process_bill_payment,
-            'PaymentAuthenticationCheck':zeep_mock.payment_authentication_check,
-            'ReceiptGeneration':zeep_mock.generate_receipt,
-            'FetchMiniStatement':zeep_mock.fetch_mini_statement,
-            'ProcessChequeBookRequest':zeep_mock.process_cheque_book_request
+            'GetUserBills': zeep_mock.get_user_bills,
+            'BillValidation': zeep_mock.bill_validation,
+            'ProcessBillPayment': zeep_mock.process_bill_payment,
+            'PaymentAuthenticationCheck': zeep_mock.payment_authentication_check,
+            'ReceiptGeneration': zeep_mock.generate_receipt,
+            'FetchMiniStatement': zeep_mock.fetch_mini_statement,
+            'ProcessChequeBookRequest': zeep_mock.process_cheque_book_request
         }
         
         # Check if service exists
         if service_name not in service_method_map:
-            return Response(
-                zeep_mock._create_soap_fault('Client', f'Unknown service: {service_name}'),
-                mimetype='text/xml'
-            )
+            fault_response = zeep_mock._create_soap_fault('Client', f'Unknown service: {service_name}')
+            return Response(content=fault_response, media_type='text/xml')
         
         # Extract parameters from the SOAP request
-        params = extract_soap_params(soap_request, service_name)
+        params = extract_soap_params(soap_request_str, service_name)
         
         # Call the appropriate method with the extracted parameters
         service_method = service_method_map[service_name]
         soap_response = service_method(**params)
         
         # Return the SOAP response
-        return Response(soap_response, mimetype='text/xml')
+        return Response(content=soap_response, media_type='text/xml')
     except Exception as e:
         # Return SOAP fault in case of error
-        return Response(
-            zeep_mock._create_soap_fault('Server', str(e)),
-            mimetype='text/xml'
-        )
+        fault_response = zeep_mock._create_soap_fault('Server', str(e))
+        return Response(content=fault_response, media_type='text/xml')
+
+# Health check endpoint
+@app.get("/health")
+async def health_check():
+    return {"status": "ok", "message": "SOAP Mock API is running"}
 
 if __name__ == '__main__':
+    import uvicorn
     # For Docker, we need to listen on 0.0.0.0 instead of localhost
-    app.run(debug=True, host='0.0.0.0', port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8000)

@@ -2,11 +2,8 @@ version: '3'
 
 services:
   soap-mock-server:
-    build: .
+    image: soap-mock-server:latest
     container_name: soap-mock-server
     ports:
       - "8000:8000"
-    volumes:
-      - ./mock_client.py:/app/mock_client.py
-      - ./soap_server.py:/app/soap_server.py
     restart: unless-stopped
