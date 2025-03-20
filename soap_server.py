@@ -52,50 +52,76 @@ class ZeepMockClient:
         return etree.tostring(root, pretty_print=True, encoding='utf-8').decode('utf-8')
     
     # API method implementations that wrap the MockClient methods
-    def customer_authentication(self, customerId, pin, deviceId):
-        json_response = self.mock_client.customer_authentication(customerId, pin, deviceId)
+    def customer_authentication(self, customerId, pin, mobileNumber, deviceId):
+        json_response = self.mock_client.customer_authentication(customerId, pin, mobileNumber, deviceId)
         return self._create_soap_response('CustomerAuthentication', json_response)
     
-    def account_validation(self, accountNumber, accountType, authToken, sessionId):
-        json_response = self.mock_client.account_validation(accountNumber, accountType, authToken, sessionId)
+    def account_validation(self, accountNumber, accountType, mobileNumber, authToken, sessionId):
+        json_response = self.mock_client.account_validation(accountNumber, accountType, mobileNumber, authToken, sessionId)
         return self._create_soap_response('AccountValidation', json_response)
     
-    def balance_inquiry(self, accountNumber, authToken, sessionId):
-        json_response = self.mock_client.balance_inquiry(accountNumber, authToken, sessionId)
+    def balance_inquiry(self, accountNumber, authToken, mobileNumber, sessionId):
+        json_response = self.mock_client.balance_inquiry(accountNumber, authToken, mobileNumber, sessionId)
         return self._create_soap_response('BalanceInquiry', json_response)
     
-    def beneficiary_validation(self, beneficiaryAccountNumber, beneficiaryBank, ifscCode, authToken, sessionId):
-        json_response = self.mock_client.beneficiary_validation(beneficiaryAccountNumber, beneficiaryBank, ifscCode, authToken, sessionId)
+    def beneficiary_validation(self, beneficiaryAccountNumber, beneficiaryBank, ifscCode, mobileNumber, authToken, sessionId):
+        json_response = self.mock_client.beneficiary_validation(beneficiaryAccountNumber, beneficiaryBank, ifscCode, mobileNumber, authToken, sessionId)
         return self._create_soap_response('BeneficiaryValidation', json_response)
     
-    def fund_availability_check(self, accountNumber, amount, authToken, sessionId):
-        json_response = self.mock_client.fund_availability_check(accountNumber, amount, authToken, sessionId)
+    def fund_availability_check(self, accountNumber, amount, mobileNumber, authToken, sessionId):
+        json_response = self.mock_client.fund_availability_check(accountNumber, amount, mobileNumber, authToken, sessionId)
         return self._create_soap_response('FundAvailabilityCheck', json_response)
     
-    def transfer_authentication(self, accountNumber, transactionPassword, authToken, sessionId):
-        json_response = self.mock_client.transfer_authentication(accountNumber, transactionPassword, authToken, sessionId)
+    def transfer_authentication(self, accountNumber, transactionPassword, mobileNumber, authToken, sessionId):
+        json_response = self.mock_client.transfer_authentication(accountNumber,  transactionPassword,mobileNumber, authToken, sessionId)
         return self._create_soap_response('TransferAuthentication', json_response)
     
-    def initiate_transfer(self, sourceAccountNumber, beneficiaryAccountNumber, amount, transferPurpose, remarks, 
+    def initiate_transfer(self, sourceAccountNumber, beneficiaryAccountNumber, amount, mobileNumber, transferPurpose, remarks,
                          transactionId, authorizationCode, authToken, sessionId):
-        json_response = self.mock_client.initiate_transfer(sourceAccountNumber, beneficiaryAccountNumber, amount, 
+        json_response = self.mock_client.initiate_transfer(sourceAccountNumber, beneficiaryAccountNumber, mobileNumber, amount,
                                                          transferPurpose, remarks, transactionId, authorizationCode, 
                                                          authToken, sessionId)
         return self._create_soap_response('InitiateTransfer', json_response)
-    
-    def bill_validation(self, billType, billerName, consumerNumber, authToken, sessionId):
-        json_response = self.mock_client.bill_validation(billType, billerName, consumerNumber, authToken, sessionId)
+# --------------- After 7   --------------------------------------------------------
+
+    def get_user_bills(self, mobileNumber, authToken, sessionId):
+        json_response = self.mock_client.get_user_bills(mobileNumber, authToken, sessionId)
+        return self._create_soap_response('GetUserBills', json_response)
+
+    def bill_validation(self, consumerNumber, mobileNumber, authToken, sessionId):
+        json_response = self.mock_client.validate_bill(consumerNumber, mobileNumber, authToken, sessionId)
         return self._create_soap_response('BillValidation', json_response)
-    
-    def payment_authentication_check(self, accountNumber, pin, authToken, sessionId):
-        json_response = self.mock_client.payment_authentication_check(accountNumber, pin, authToken, sessionId)
-        return self._create_soap_response('PaymentAuthenticationCheck', json_response)
-    
-    def process_bill_payment(self, accountNumber, billerId, consumerNumber, billNumber, amount, paymentId,
-                           authorizationCode, authToken, sessionId):
-        json_response = self.mock_client.process_bill_payment(accountNumber, billerId, consumerNumber, billNumber, 
-                                                            amount, paymentId, authorizationCode, authToken, sessionId)
+
+    def process_bill_payment(self, accountNumber, consumerNumber, paymentId, authorizationCode, mobileNumber, authToken,
+                        sessionId):
+        json_response = self.mock_client.process_payment(accountNumber, consumerNumber, paymentId, authorizationCode,
+                                                         mobileNumber, authToken, sessionId)
         return self._create_soap_response('ProcessBillPayment', json_response)
+
+    def payment_authentication_check(self, accountNumber, pin, mobileNumber, authToken, sessionId):
+        json_response = self.mock_client.authenticate_payment(accountNumber, pin, mobileNumber, authToken, sessionId)
+        return self._create_soap_response('PaymentAuthenticationCheck', json_response)
+
+    def generate_receipt(self, paymentReferenceNumber, receiptNumber, mobileNumber, authToken, sessionId):
+        json_response = self.mock_client.generate_receipt(paymentReferenceNumber, receiptNumber, mobileNumber,
+                                                          authToken, sessionId)
+        return self._create_soap_response('ReceiptGeneration', json_response)
+
+    def fetch_mini_statement(self, accountNumber, numberOfTransactions=10, fromDate=None, toDate=None,
+                             mobileNumber=None, authToken=None, sessionId=None):
+        json_response = self.mock_client.fetch_mini_statement(accountNumber, numberOfTransactions, fromDate, toDate,
+                                                              mobileNumber, authToken, sessionId)
+        return self._create_soap_response('FetchMiniStatement', json_response)
+
+    def process_cheque_book_request(self, accountNumber, numberOfLeaves, deliveryOption, branchCode=None,
+                                    reasonForRequest=None, additionalRemarks=None, mobileNumber=None, authToken=None,
+                                    sessionId=None):
+        json_response = self.mock_client.process_cheque_book_request(accountNumber, numberOfLeaves, deliveryOption,
+                                                                     branchCode, reasonForRequest, additionalRemarks,
+                                                                     mobileNumber, authToken, sessionId)
+        return self._create_soap_response('ProcessChequeBookRequest', json_response)
+    
+
 
 # Create Flask app and zeep mock client
 app = Flask(__name__)
@@ -155,9 +181,13 @@ def soap_service(service_name):
             'FundAvailabilityCheck': zeep_mock.fund_availability_check,
             'TransferAuthentication': zeep_mock.transfer_authentication,
             'InitiateTransfer': zeep_mock.initiate_transfer,
-            'BillValidation': zeep_mock.bill_validation,
-            'PaymentAuthenticationCheck': zeep_mock.payment_authentication_check,
-            'ProcessBillPayment': zeep_mock.process_bill_payment
+            'GetUserBills':zeep_mock.get_user_bills,
+            'BillValidation':zeep_mock.bill_validation,
+            'ProcessBillPayment':zeep_mock.process_bill_payment,
+            'PaymentAuthenticationCheck':zeep_mock.payment_authentication_check,
+            'ReceiptGeneration':zeep_mock.generate_receipt,
+            'FetchMiniStatement':zeep_mock.fetch_mini_statement,
+            'ProcessChequeBookRequest':zeep_mock.process_cheque_book_request
         }
         
         # Check if service exists
@@ -182,24 +212,6 @@ def soap_service(service_name):
             zeep_mock._create_soap_fault('Server', str(e)),
             mimetype='text/xml'
         )
-
-# Example route for testing without SOAP
-@app.route('/test/<service_name>', methods=['GET'])
-def test_service(service_name):
-    """Simple test endpoint that doesn't require SOAP"""
-    try:
-        if service_name == 'CustomerAuthentication':
-            soap_response = zeep_mock.customer_authentication(
-                customerId=request.args.get('customerId', 'CUS123456'),
-                pin=request.args.get('pin', '123456'),
-                deviceId=request.args.get('deviceId', 'DEVICE001')
-            )
-            return Response(soap_response, mimetype='text/xml')
-        # Add other services as needed
-        else:
-            return f"Unknown service: {service_name}"
-    except Exception as e:
-        return str(e)
 
 if __name__ == '__main__':
     # For Docker, we need to listen on 0.0.0.0 instead of localhost
